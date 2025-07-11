@@ -1,1 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+*.sqlite3
+.env
+.env.*
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Virtualenv
+venv/
+.venv/
+
+# Custom files
 *.pdf
