@@ -5,6 +5,7 @@ __pycache__/
 *.log
 *.sqlite3
 .env
+.env.local
 
 # Docker
 *.pid
@@ -13,6 +14,9 @@ docker-compose.override.yml
 # Virtualenv
 venv/
 .venv/
+
+# pytest
+.coverage
 
 # Custom files
 *.pdf
