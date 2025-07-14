@@ -36,10 +36,12 @@ def get_transaction(tx_hash: str):
         transaction_type="erc20" if tx.get("input", "0x") != "0x" else "eth"
     )
 
-@router.post("/validate", response_model=schemas.TransactionOut)
+@router.get("/validate", response_model=schemas.TransactionValidcationOut)
 def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
     """Validate the transaction security."""
     logger.info(f"Request to validate transaction with hash {tx_hash} received")
+
+    validation =None
 
     try:
         logger.info(f"Retrieving transaction {tx_hash} from Ethereum provider")
@@ -97,7 +99,9 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
                     transaction.to_address = first.to_address
                     transaction.value = first.value
 
-            existing_tx = db.query(models.Transaction).filter(models.Transaction.hash == transaction.hash).first()
+            existing_tx = db.query(models.Transaction).filter(
+                    models.Transaction.hash == transaction.hash
+                ).first()
             if not existing_tx:
                 db.add(transaction)
                 db.commit()
@@ -107,20 +111,12 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
         logger.error(f"Error validating transaction: {e}")
         raise HTTPException(status_code=400, detail="Invalid transaction") from e
 
+    if not validation:
+        logger.error(f"Transaction {tx_hash} validation failed")
+        raise HTTPException(status_code=400, detail="Transaction validation failed")
+
     logger.info(f"Transaction {tx_hash} validated successfully")
 
-    return schemas.TransactionOut(
-        id=transaction.id,
-        hash=transaction.hash,
-        from_address=transaction.from_address,
-        to_address=transaction.to_address,
-        value=transaction.value,
-        gas=transaction.gas,
-        gas_price=transaction.gas_price,
-        input_data=transaction.input_data,
-        receipt_status=transaction.receipt_status,
-        token_contract=transaction.token_contract,
-        token_symbol=transaction.token_symbol,
-        token_decimals=transaction.token_decimals,
-        transaction_type=transaction.transaction_type
-    )
+    return validation
+
+# @router.post("/")

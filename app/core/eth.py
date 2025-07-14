@@ -4,7 +4,7 @@ from eth_account import Account
 from web3 import Web3
 from app.core import config, utils
 from app.core.logger import logger
-from app.db.schemas import TransactionValidation, Transfer
+from app.db import schemas
 
 Account.enable_unaudited_hdwallet_features()
 
@@ -25,14 +25,14 @@ def get_transaction(tx_hash: str):
     receipt = w3.eth.get_transaction_receipt(tx_hash)
     return tx, receipt
 
-def validate_transaction(tx_data: dict, receipt: dict) -> TransactionValidation:
+def validate_transaction(tx_data: dict, receipt: dict) -> schemas.TransactionValidcationOut:
     """Validate the transaction security."""
 
     tx_type = None
 
     if not receipt or receipt.get("status") != 1:
         logger.warning(f"Transaction {tx_data['hash']} failed with status {receipt.status}")
-        return TransactionValidation(
+        return schemas.TransactionValidcationOut(
             tx_type=tx_type,
             hash=tx_data["hash"].hex(),
             is_valid=False,
@@ -40,11 +40,11 @@ def validate_transaction(tx_data: dict, receipt: dict) -> TransactionValidation:
             transfers=[]
         )
 
-    transfers: list[Transfer] = []
+    transfers: list[schemas.Transfer] = []
 
     if not tx_data["input"] and tx_data["value"] > 0:
         logger.info(f"Transaction {tx_data['hash']} is a simple ETH transfer")
-        transfers.append(Transfer(
+        transfers.append(schemas.Transfer(
             asset="ETH",
             to_address=tx_data["to"],
             value=str(utils.from_wei(tx_data["value"]))
@@ -63,7 +63,7 @@ def validate_transaction(tx_data: dict, receipt: dict) -> TransactionValidation:
             raw_value = int(log["data"].hex(), 16)
             value = utils.from_wei(raw_value, decimals)
 
-            transfers.append(Transfer(
+            transfers.append(schemas.Transfer(
                 asset=symbol,
                 to_address=to_address,
                 value=value,
@@ -79,7 +79,7 @@ def validate_transaction(tx_data: dict, receipt: dict) -> TransactionValidation:
 
     if not transfers:
         logger.warning(f"Transaction {tx_data['hash']} has no valid ETH or ERC20 transfers")
-        return TransactionValidation(
+        return schemas.TransactionValidcationOut(
                     tx_type=tx_type,
                     hash=tx_data["hash"].hex(),
                     is_valid=False,
@@ -89,4 +89,4 @@ def validate_transaction(tx_data: dict, receipt: dict) -> TransactionValidation:
     
     logger.info(f"Transaction {tx_data['hash']} is valid with type {tx_type}")
 
-    return TransactionValidation(tx_type=tx_type, hash=tx_data["hash"].hex(), is_valid=True, transfers=transfers)
+    return schemas.TransactionValidcationOut(tx_type=tx_type, hash=tx_data["hash"].hex(), is_valid=True, transfers=transfers)

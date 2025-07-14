@@ -43,7 +43,7 @@ class Transfer(BaseModel):
     to_address: str | None = None
     value: str | None = None
     decimals: int | None = None
-class TransactionValidation(BaseModel):
+class TransactionValidcationOut(BaseModel):
     """Schema for transaction validation response."""
     hash: str
     tx_type: str = "eth"
