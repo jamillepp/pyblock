@@ -7,8 +7,10 @@ from app.core import config
 
 def encrypt_private_key(private_key_hex: str) -> str:
     """Encrypt the private key using AES encryption."""
-    aes_key = bytes.fromhex(config.AES_KEY)
+    if not private_key_hex.startswith("0x"):
+        raise ValueError("Private key must start with 0x")
 
+    aes_key = bytes.fromhex(config.AES_KEY)
     cipher = AES.new(aes_key, AES.MODE_EAX)
     ciphertext, tag = cipher.encrypt_and_digest(bytes.fromhex(private_key_hex[2:]))
     return base64.b64encode(cipher.nonce + tag + ciphertext).decode()
@@ -16,12 +18,15 @@ def encrypt_private_key(private_key_hex: str) -> str:
 def decrypt_private_key(encrypted_key: str) -> str:
     """Decrypt the private key using AES decryption."""
     aes_key = bytes.fromhex(config.AES_KEY)
-
     encrypted_data = base64.b64decode(encrypted_key)
-    nonce, tag, ciphertext = encrypted_data[:16], encrypted_data[16:32], encrypted_data[32:]
 
+    nonce, tag, ciphertext = encrypted_data[:16], encrypted_data[16:32], encrypted_data[32:]
     cipher = AES.new(aes_key, AES.MODE_EAX, nonce=nonce)
     decrypted_key = cipher.decrypt_and_verify(ciphertext, tag)
+
+    if len(decrypted_key) != 32:
+        raise ValueError("Invalid decrypted private key length")
+
     return "0x" + decrypted_key.hex()
 
 def get_token_metadata(contract_address: str) -> tuple[str, int]:
