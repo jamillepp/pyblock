@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ### Variáveis de Ambiente
 
-Para utilizar a API, defina as variáveis de ambiente necessárias. Consulte o arquivo `.env.example` para referência. Exemplos:
+Defina as variáveis de ambiente necessárias para utilizar a API. Consulte o arquivo `.env.example` para referência. Exemplo:
 
 ```env
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/pyblock_db  # URL de conexão com o banco
@@ -28,6 +28,27 @@ docker compose up -d --build
 ```
 
 ## Testes
+
+### Configuração para Testes
+
+Para testar a API, defina as variáveis de ambiente necessárias. Use dados personalizados e reais para que os testes funcionem corretamente. Exemplo:
+
+```env
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/pyblock_db
+AES_KEY=7071...5b98
+METAMASK_API_KEY=a78...b5b
+
+ETH_TX_HASH=0xa5...86
+ERC20_TX_HASH=0xb1...3a
+
+ACC2_ADDRESS=0xBD...c7e
+ACC1_ADDRESS=0x3a...97
+
+CONTRACT_ASSET=GLD
+CONTRACT_ADDRESS=0x06...a8
+```
+
+### Rodando os Testes
 
 A API possui testes unitários utilizando `pytest`. Para executá-los, use:
 
