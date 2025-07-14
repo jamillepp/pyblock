@@ -1,3 +1,5 @@
+"""Wallet API endpoints"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.db import models, schemas
@@ -9,6 +11,7 @@ router = APIRouter()
 
 @router.post("/", response_model=schemas.WalletCreateResponse)
 def create_wallets(qtd: int, db: Session = Depends(get_db)):
+    """Create multiple wallets and save them to the database."""
     logger.info(f"Request to create {qtd} wallets received")
 
     if qtd <= 0 or qtd > 50:
@@ -37,9 +40,11 @@ def create_wallets(qtd: int, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[schemas.WalletOut])
 def list_wallets(db: Session = Depends(get_db)):
+    """List all wallets stored in the database."""
     logger.info("Request to list all wallets received")
 
     wallets = db.query(models.Wallet).all()
 
     logger.info(f"Retrieved {len(wallets)} wallets from the database")
+
     return wallets
