@@ -111,3 +111,18 @@ def test_create_erc20_transaction(client):
     assert data["message"] == "Transaction created successfully"
     assert "transaction_hash" in data
 
+def test_get_transaction_not_found(client):
+    """Test retrieving a transaction with an invalid hash."""
+    response = client.get("/transactions/", params={"tx_hash": "0xdeadbeef"})
+    assert response.status_code == 404
+    data = response.json()
+    assert "detail" in data
+    assert data["detail"] == "Transaction not found"
+
+def test_validate_transaction_not_found(client):
+    """Test validating a transaction with an invalid hash."""
+    response = client.get("/transactions/validate", params={"tx_hash": "0xdeadbeef"})
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+
