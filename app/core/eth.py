@@ -26,42 +26,54 @@ def create_transaction(transaction: schemas.TransactionIn, private_key: str) -> 
         raise ValueError("Private key does not match from_address")
 
     value_wei = w3.to_wei(transaction.amount, 'ether')
-
     balance = w3.eth.get_balance(transaction.from_address)
-    logger.info(f"Account balance: {w3.from_wei(balance, 'ether')} ETH")
-    logger.info(f"Transaction value: {w3.from_wei(value_wei, 'ether')} ETH")
+    if balance < value_wei:
+        raise ValueError("Insufficient balance for the transaction")
 
-    gas_limit = w3.eth.estimate_gas({
-        'from': transaction.from_address,
-        'to': transaction.to_address,
-        'value': value_wei,
-    })
+    gas_price = int(w3.eth.gas_price * 1.2)
+    nonce = w3.eth.get_transaction_count(transaction.from_address, 'pending')
 
-    base_fee = w3.eth.gas_price
-    gas_price = int(base_fee * 1.2)
-    gas_cost = gas_limit * gas_price
-    total_cost = value_wei + gas_cost
+    tx = None
+    decimals = 18
+    if transaction.asset.upper() == "ETH":
+        gas_limit = w3.eth.estimate_gas({
+            'from': transaction.from_address,
+            'to': transaction.to_address,
+            'value': value_wei,
+        })
 
-    from_addr = Web3.to_checksum_address(transaction.from_address)
-    to_addr = Web3.to_checksum_address(transaction.to_address)
+        tx = {
+            "nonce": nonce,
+            "to": Web3.to_checksum_address(transaction.to_address),
+            "value": value_wei,
+            "gas": gas_limit,
+            "gasPrice": gas_price
+        }
+    else:
+        if not transaction.contract:
+            raise ValueError("Contract address is required for ERC20 transactions")
 
-    tx = {
-        'nonce': w3.eth.get_transaction_count(from_addr, 'pending'),
-        'to': to_addr,
-        'value': value_wei,
-        'gas': gas_limit,
-        'gasPrice': gas_price,
-        'data': b'',
-    }
+        contract = utils.get_token_contract(transaction.contract)
+        if not contract:
+            raise ValueError("Invalid contract address for ERC20 transaction")
 
-    logger.info(f"Gas limit: {gas_limit}")
-    logger.info(f"Gas price: {w3.from_wei(gas_price, 'gwei')} Gwei")
-    logger.info(f"Gas cost: {w3.from_wei(gas_cost, 'ether')} ETH")
-    logger.info(f"Total cost: {w3.from_wei(total_cost, 'ether')} ETH")
+        decimals = contract.functions.decimals().call()
 
-    signed_tx = w3.eth.account.sign_transaction(tx, private_key=private_key)
+        gas_limit = contract.functions.transfer(transaction.to_address, int(transaction.amount * 10**decimals)).estimate_gas({
+            "from": transaction.from_address,
+        })
+
+        tx = contract.functions.transfer(transaction.to_address, int(transaction.amount * 10**decimals)).build_transaction({
+            "nonce": nonce,
+            "gas": gas_limit,
+            "gasPrice": gas_price,
+        })
+
+    if not tx:
+        raise ValueError("Failed to build transaction")
+
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     if receipt.status != 1:
         logger.error(f"Transaction failed with status {receipt.status}")
@@ -76,12 +88,12 @@ def create_transaction(transaction: schemas.TransactionIn, private_key: str) -> 
         value=str(value_wei),
         gas=gas_limit,
         gas_price=gas_price,
-        input_data='',
+        input_data=tx.get("input", ""),
         receipt_status=receipt.status,
-        token_contract=None,
-        token_symbol=None,
-        token_decimals=None,
-        transaction_type="eth"
+        token_contract=transaction.contract,
+        token_symbol=transaction.asset.upper(),
+        token_decimals=decimals,
+        transaction_type="eth" if transaction.asset.upper() == "ETH" else "erc20"
     )
 
 def get_transaction(tx_hash: str):
@@ -155,7 +167,7 @@ def validate_transaction(tx_data: dict, receipt: dict) -> schemas.ValidateTransa
                     reason="No valid ETH or ERC20 transfers found",
                     transfers=[]
                 )
-    
+
     logger.info(f"Transaction {tx_data['hash']} is valid with type {tx_type}")
 
     return schemas.ValidateTransactionResponse(tx_type=tx_type, hash=tx_data["hash"].hex(), is_valid=True, transfers=transfers)

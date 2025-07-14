@@ -8,6 +8,9 @@ ERC20_TX_HASH = os.getenv("ERC20_TX_HASH")
 ACC1_ADDRESS = os.getenv("ACC1_ADDRESS")
 ACC2_ADDRESS = os.getenv("ACC2_ADDRESS")
 
+CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
+CONTRACT_ASSET = os.getenv("CONTRACT_ASSET")
+
 def test_get_eth_transaction(client):
     """Test retrieving a ethereum transaction by hash."""
 
@@ -88,3 +91,23 @@ def test_crate_eth_transaction(client):
     assert "message" in data
     assert data["message"] == "Transaction created successfully"
     assert "transaction_hash" in data
+
+def test_create_erc20_transaction(client):
+    """Test creating an ERC20 transaction."""
+
+    transaction_data = {
+        "from_address": ACC1_ADDRESS,
+        "to_address": ACC2_ADDRESS,
+        "asset": CONTRACT_ASSET,
+        "amount": 0.01,
+        "contract": CONTRACT_ADDRESS
+    }
+
+    response = client.post("/transactions", json=transaction_data)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "message" in data
+    assert data["message"] == "Transaction created successfully"
+    assert "transaction_hash" in data
+

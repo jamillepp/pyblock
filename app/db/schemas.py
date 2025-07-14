@@ -26,10 +26,12 @@ class CreateTransactionResponse(BaseModel):
     )
 
 class TransactionIn(BaseModel):
+    """Schema for inputting transaction information."""
     from_address: str
     to_address: str
     asset: str
     amount: float
+    contract: str | None = None
 
 class TransactionOut(BaseModel):
     """Schema for outputting transaction information."""

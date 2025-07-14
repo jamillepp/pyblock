@@ -57,3 +57,33 @@ def get_transfer_event_signature() -> str:
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 
     return w3.keccak(text="Transfer(address,address,uint256)").hex()
+
+ERC20_ABI = [
+    {
+        "constant": False,
+        "inputs": [
+            {"name": "_to", "type": "address"},
+            {"name": "_value", "type": "uint256"}
+        ],
+        "name": "transfer",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function"
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function",
+    },
+]
+
+def get_token_contract(token_address: str):
+    """Get the token contract instance for the given address."""
+
+    w3 = config.get_web3_sepolia_provider()
+    if not w3.is_connected():
+        raise ConnectionError("Failed to connect to the Ethereum provider.")
+
+    token_address = w3.to_checksum_address(token_address)
+    return w3.eth.contract(address=token_address, abi=ERC20_ABI)

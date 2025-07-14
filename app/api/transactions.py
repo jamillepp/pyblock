@@ -39,10 +39,11 @@ def create_transaction(transaction: schemas.TransactionIn, db: Session = Depends
             gas=transaction_out.gas,
             gas_price=transaction_out.gas_price,
             input_data=transaction_out.input_data,
-            receipt_status=1,
-            token_contract=None,
-            token_symbol=None,
-            token_decimals=None,
+            receipt_status=transaction_out.receipt_status,
+            token_contract=transaction_out.token_contract,
+            token_symbol=transaction_out.token_symbol,
+            token_decimals= transaction_out.token_decimals,
+            transaction_type=transaction_out.transaction_type
         )
 
         db.add(db_transaction)
