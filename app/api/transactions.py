@@ -166,3 +166,24 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
     logger.info(f"Transaction {tx_hash} validated successfully")
 
     return validation
+
+@router.get("/account", response_model=schemas.AccountTransactionsResponse)
+def get_account_transactions(address: str, db: Session = Depends(get_db)):
+    """Retrieve all transactions for a given account address."""
+    logger.info(f"Request to get transactions for account {address} received")
+
+    try:
+        transactions = db.query(models.Transaction).filter(
+            (models.Transaction.from_address == address) | (models.Transaction.to_address == address)
+        ).all()
+
+        if not transactions:
+            logger.warning(f"No transactions found for account {address}")
+            raise HTTPException(status_code=404, detail="No transactions found for this account")
+
+        logger.info(f"Found {len(transactions)} transactions for account {address}")
+
+        return schemas.AccountTransactionsResponse(transactions=transactions)
+    except Exception as e:
+        logger.error(f"Error retrieving transactions for account {address}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve transactions") from e

@@ -68,3 +68,7 @@ class ValidateTransactionResponse(BaseModel):
     reason: str | None = None
     confirmations: int | None = None
     transfers: list[Transfer] | None = None
+
+class AccountTransactionsResponse(BaseModel):
+    """Schema for account transactions response."""
+    transactions: list[TransactionOut]

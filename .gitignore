@@ -17,6 +17,10 @@ venv/
 
 # pytest
 .coverage
+.pytest_cache/
 
 # Custom files
 *.pdf
+
+# VS Code
+.vscode/
