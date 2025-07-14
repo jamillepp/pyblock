@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+from web3 import Web3
 from app.db import models, schemas
 from app.core import eth, utils
 from app.db.session import get_db
@@ -30,6 +31,10 @@ def create_wallets(qtd: int, db: Session = Depends(get_db)):
         db.add(wallet)
         wallets.append(address)
 
+    if Web3.to_checksum_address(Web3().eth.account.from_key(private_key).address) != address:
+        logger.error("Private key does not match the generated address.")
+        raise HTTPException(status_code=500, detail="Private key does not match the generated address.")
+
     logger.info(f"{qtd} wallets created successfully. Saving to database.")
 
     db.commit()
@@ -44,6 +49,13 @@ def list_wallets(db: Session = Depends(get_db)):
     logger.info("Request to list all wallets received")
 
     wallets = db.query(models.Wallet).all()
+
+    for wallet in wallets:
+        decrypted_key = utils.decrypt_private_key(wallet.private_key)
+        if Web3.to_checksum_address(Web3().eth.account.from_key(decrypted_key).address) != wallet.address:
+            logger.error("Private key does not match the generated address.")
+            raise HTTPException(status_code=500, detail="Private key does not match the generated address.")
+        print(f"Address: {wallet.address}, Private Key: {decrypted_key}")
 
     logger.info(f"Retrieved {len(wallets)} wallets from the database")
 
