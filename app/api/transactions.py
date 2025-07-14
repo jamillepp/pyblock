@@ -2,12 +2,60 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.core import eth
+from app.core import eth, utils
 from app.core.logger import logger
 from app.db import schemas, models
 from app.db.session import get_db
 
 router = APIRouter()
+
+@router.post("/", response_model=schemas.CreateTransactionResponse)
+def create_transaction(transaction: schemas.TransactionIn, db: Session = Depends(get_db)):
+    """Create a new transaction."""
+    logger.info(f"Request to create transaction from {transaction.from_address} to {transaction.to_address} received")
+
+    try:
+        if not transaction.from_address or not transaction.to_address:
+            raise HTTPException(status_code=400, detail="From and To addresses are required")
+        if transaction.amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than zero")
+
+        account = db.query(models.Wallet).filter(models.Wallet.address == transaction.from_address).first()
+        if not account:
+            raise HTTPException(status_code=404, detail="From address not found in database")
+
+        decrypted_private_key = utils.decrypt_private_key(account.private_key)
+        if not decrypted_private_key:
+            raise HTTPException(status_code=403, detail="Invalid private key for the provided address")
+
+        transaction_out = eth.create_transaction(transaction, decrypted_private_key)
+        logger.info(f"Transaction created successfully with hash {transaction_out.hash}")
+
+        db_transaction = models.Transaction(
+            hash=transaction_out.hash,
+            from_address=transaction_out.from_address,
+            to_address=transaction_out.to_address,
+            value=transaction_out.value,
+            gas=transaction_out.gas,
+            gas_price=transaction_out.gas_price,
+            input_data=transaction_out.input_data,
+            receipt_status=1,
+            token_contract=None,
+            token_symbol=None,
+            token_decimals=None,
+        )
+
+        db.add(db_transaction)
+        db.commit()
+
+        return schemas.CreateTransactionResponse(
+            message="Transaction created successfully",
+            transaction_hash=transaction_out.hash
+        )
+    except Exception as e:
+        logger.error(f"Error creating transaction: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create transaction") from e
+
 
 @router.get("/", response_model=schemas.TransactionOut)
 def get_transaction(tx_hash: str):
@@ -22,7 +70,6 @@ def get_transaction(tx_hash: str):
 
     logger.info(f"Transaction {tx_hash} retrieved successfully")
 
-    # Converte para o formato esperado pelo teste
     return schemas.TransactionOut(
         id=1,
         hash=tx["hash"].hex(),
@@ -36,7 +83,7 @@ def get_transaction(tx_hash: str):
         transaction_type="erc20" if tx.get("input", "0x") != "0x" else "eth"
     )
 
-@router.get("/validate", response_model=schemas.TransactionValidcationOut)
+@router.get("/validate", response_model=schemas.ValidateTransactionResponse)
 def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
     """Validate the transaction security."""
     logger.info(f"Request to validate transaction with hash {tx_hash} received")
@@ -118,5 +165,3 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
     logger.info(f"Transaction {tx_hash} validated successfully")
 
     return validation
-
-# @router.post("/")

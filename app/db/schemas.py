@@ -16,10 +16,25 @@ class WalletCreateResponse(BaseModel):
     message: str
     addresses: list[str]
 
+class CreateTransactionResponse(BaseModel):
+    """Schema for creating a transaction response."""
+    message: str
+    transaction_hash: str
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+class TransactionIn(BaseModel):
+    from_address: str
+    to_address: str
+    asset: str
+    amount: float
+
 class TransactionOut(BaseModel):
     """Schema for outputting transaction information."""
 
-    id: int
+    id: int | None = None
     hash: str
     from_address: str
     to_address: str | None = None
@@ -43,7 +58,7 @@ class Transfer(BaseModel):
     to_address: str | None = None
     value: str | None = None
     decimals: int | None = None
-class TransactionValidcationOut(BaseModel):
+class ValidateTransactionResponse(BaseModel):
     """Schema for transaction validation response."""
     hash: str
     tx_type: str = "eth"
