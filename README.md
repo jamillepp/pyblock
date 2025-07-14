@@ -55,3 +55,7 @@ A API possui testes unitários utilizando `pytest`. Para executá-los, use:
 ```bash
 pytest -v -s
 ```
+
+# Documentação
+
+Esta API é feita com FastAPI, por isso uma documentação no swagger é gerada em `http://localhost:8000/docs` quando ela está de pé.
