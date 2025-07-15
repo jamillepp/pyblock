@@ -125,4 +125,3 @@ def test_validate_transaction_not_found(client):
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-

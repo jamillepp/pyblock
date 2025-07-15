@@ -121,14 +121,16 @@ def validate_transaction(tx_data: dict, receipt: dict) -> schemas.ValidateTransa
             transfers=[]
         )
 
-    transfers: list[schemas.Transfer] = []
+    transfers: list[schemas.TransferResponse] = []
 
     if not tx_data["input"] and tx_data["value"] > 0:
         logger.info(f"Transaction {tx_data['hash']} is a simple ETH transfer")
-        transfers.append(schemas.Transfer(
+        transfers.append(schemas.TransferResponse(
             asset="ETH",
+            from_address=tx_data["from"],
             to_address=tx_data["to"],
-            value=str(utils.from_wei(tx_data["value"]))
+            value=str(utils.from_wei(tx_data["value"])),
+            decimals=18
         ))
         tx_type = "eth"
 
@@ -144,8 +146,9 @@ def validate_transaction(tx_data: dict, receipt: dict) -> schemas.ValidateTransa
             raw_value = int(log["data"].hex(), 16)
             value = utils.from_wei(raw_value, decimals)
 
-            transfers.append(schemas.Transfer(
+            transfers.append(schemas.TransferResponse(
                 asset=symbol,
+                from_address=tx_data["from"],
                 to_address=to_address,
                 value=value,
                 decimals=decimals

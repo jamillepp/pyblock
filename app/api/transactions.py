@@ -1,7 +1,7 @@
 """Transaction API endpoints"""
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from app.core import eth, utils
 from app.core.logger import logger
 from app.db import schemas, models
@@ -46,6 +46,16 @@ def create_transaction(transaction: schemas.TransactionIn, db: Session = Depends
             transaction_type=transaction_out.transaction_type
         )
 
+        db_transfer = models.Transfer(
+            transaction_id=db_transaction.id,
+            asset=transaction.asset,
+            from_address=transaction.from_address,
+            to_address=transaction.to_address,
+            value=transaction.amount,
+            decimals=transaction_out.token_decimals if transaction_out.token_decimals else 18
+        )
+        db_transaction.transfers.append(db_transfer)
+        
         db.add(db_transaction)
         db.commit()
 
@@ -137,6 +147,17 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
                 token_decimals=None,
             )
 
+            for transfer in validation.transfers:
+                db_transfer = models.Transfer(
+                    asset=transfer.asset,
+                    transaction_id=transaction.id,
+                    from_address=transfer.from_address,
+                    to_address=transfer.to_address,
+                    value=transfer.value,
+                    decimals=transfer.decimals
+                )
+                transaction.transfers.append(db_transfer)
+
             if validation.tx_type == "erc20":
                 transaction.transaction_type = "erc20"
                 transaction.token_contract = tx["to"]
@@ -173,8 +194,11 @@ def get_account_transactions(address: str, db: Session = Depends(get_db)):
     logger.info(f"Request to get transactions for account {address} received")
 
     try:
-        transactions = db.query(models.Transaction).filter(
-            (models.Transaction.from_address == address) | (models.Transaction.to_address == address)
+        transactions = db.query(models.Transaction).options(
+            selectinload(models.Transaction.transfers)
+        ).filter(
+            (models.Transaction.from_address == address) |
+            (models.Transaction.to_address == address)
         ).all()
 
         if not transactions:

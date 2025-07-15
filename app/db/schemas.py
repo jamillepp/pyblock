@@ -49,17 +49,23 @@ class TransactionOut(BaseModel):
     token_symbol: str | None = None
     token_decimals: int | None = None
     transaction_type: str
+    transfers: list['TransferResponse'] | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
     )
 
-class Transfer(BaseModel):
+class TransferResponse(BaseModel):
     """Schema for transferring assets."""
-    asset: str | None = None
-    to_address: str | None = None
-    value: str | None = None
-    decimals: int | None = None
+    asset: str
+    from_address: str
+    to_address: str
+    value: str
+    decimals: int
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 class ValidateTransactionResponse(BaseModel):
     """Schema for transaction validation response."""
     hash: str
@@ -67,7 +73,7 @@ class ValidateTransactionResponse(BaseModel):
     is_valid: bool
     reason: str | None = None
     confirmations: int | None = None
-    transfers: list[Transfer] | None = None
+    transfers: list[TransferResponse] | None = None
 
 class AccountTransactionsResponse(BaseModel):
     """Schema for account transactions response."""
