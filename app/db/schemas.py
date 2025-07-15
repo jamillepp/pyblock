@@ -69,7 +69,7 @@ class TransferResponse(BaseModel):
 class ValidateTransactionResponse(BaseModel):
     """Schema for transaction validation response."""
     hash: str
-    tx_type: str = "eth"
+    tx_type: str | None = None
     is_valid: bool
     reason: str | None = None
     confirmations: int | None = None

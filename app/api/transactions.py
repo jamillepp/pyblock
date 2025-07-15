@@ -103,7 +103,22 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
 
     try:
         logger.info(f"Retrieving transaction {tx_hash} from Ethereum provider")
-        tx, receipt = eth.get_transaction(tx_hash)
+        try:
+            tx, receipt = eth.get_transaction(tx_hash)
+        except Exception as e:
+            logger.error(f"Error retrieving transaction {tx_hash}: {e}")
+            if f"Transaction with hash: '{tx_hash}' not found." in str(e):
+                logger.error(f"Transaction {tx_hash} not found: {e}")
+                return schemas.ValidateTransactionResponse(
+                    tx_type=None,
+                    hash=tx_hash,
+                    is_valid=False,
+                    reason="Transaction not found",
+                    transfers=[]
+                )
+            else:
+                logger.error(f"Error retrieving transaction {tx_hash}: {e}")
+                raise HTTPException(status_code=400, detail="Invalid transaction") from e
 
         logger.info(f"Validating transaction {tx_hash}")
         validation = eth.validate_transaction(tx, receipt)
@@ -129,7 +144,12 @@ def validate_transaction(tx_hash: str, db: Session = Depends(get_db)):
                 account = db.query(models.Wallet).filter(models.Wallet.address == to).first()
                 if not account:
                     logger.warning(f"Destination address {to} not found in database in transaction {tx_hash}")
-                    raise HTTPException(status_code=404, detail=f"Destination address {to} not found in database")
+                    return schemas.ValidateTransactionResponse(
+                        tx_type=validation.tx_type,
+                        hash=tx_hash,
+                        is_valid=False,
+                        reason=f"Destination address {to} not found in database",
+                    )
 
             logger.info(f"Transaction {tx_hash} is valid. Storing in database")
 
