@@ -17,6 +17,7 @@ Defina as variáveis de ambiente necessárias para utilizar a API. Consulte o ar
 ```env
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/pyblock_db  # URL de conexão com o banco
 AES_KEY=test_aes_key  # Chave de criptografia para as chaves privadas das contas
+PROVIDER_URLhttps://sepolia.infura.io/v3/{API_KEY} # Url para conexão do Web3 com a rede
 ```
 
 ## Inicialização da API
@@ -36,7 +37,7 @@ Para testar a API, defina as variáveis de ambiente necessárias. Use dados pers
 ```env
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/pyblock_db
 AES_KEY=7071...5b98
-METAMASK_API_KEY=a78...b5b
+PROVIDER_URLhttps://sepolia.infura.io/v3/{API_KEY}
 
 ETH_TX_HASH=0xa5...86
 ERC20_TX_HASH=0xb1...3a

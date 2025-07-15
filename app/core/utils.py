@@ -32,7 +32,7 @@ def decrypt_private_key(encrypted_key: str) -> str:
 def get_token_metadata(contract_address: str) -> tuple[str, int]:
     """Get token metadata (symbol and decimals) from the contract address."""
 
-    w3 = config.get_web3_sepolia_provider()
+    w3 = config.get_web3_provider()
     if not w3.is_connected():
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 
@@ -52,7 +52,7 @@ def from_wei(value: int, decimals: int = 18) -> str:
 def get_transfer_event_signature() -> str:
     """Get the signature for the ERC20 Transfer event."""
 
-    w3 = config.get_web3_sepolia_provider()
+    w3 = config.get_web3_provider()
     if not w3.is_connected():
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 
@@ -81,7 +81,7 @@ ERC20_ABI = [
 def get_token_contract(token_address: str):
     """Get the token contract instance for the given address."""
 
-    w3 = config.get_web3_sepolia_provider()
+    w3 = config.get_web3_provider()
     if not w3.is_connected():
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 

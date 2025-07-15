@@ -18,10 +18,10 @@ if not DATABASE_URL:
 AES_KEY = os.getenv("AES_KEY")
 if not AES_KEY:
     raise ValueError("AES_KEY is not set in the environment variables.")
-METAMASK_API_KEY = os.getenv("METAMASK_API_KEY")
+PROVIDER_URL = os.getenv("PROVIDER_URL")
 
-def get_web3_sepolia_provider():
+def get_web3_provider():
     """Get a Web3 provider for the Sepolia testnet."""
-    if not METAMASK_API_KEY:
-        raise ValueError("METAMASK_API_KEY is not set in the environment variables.")
-    return Web3(Web3.HTTPProvider(f'https://sepolia.infura.io/v3/{METAMASK_API_KEY}'))
+    if not PROVIDER_URL:
+        raise ValueError("PROVIDER_URL is not set in the environment variables.")
+    return Web3(Web3.HTTPProvider(PROVIDER_URL))

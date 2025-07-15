@@ -17,7 +17,7 @@ def create_wallet():
 
 def create_transaction(transaction: schemas.TransactionIn, private_key: str) -> schemas.TransactionOut:
     """Create a new transaction and return the transaction hash."""
-    w3 = config.get_web3_sepolia_provider()
+    w3 = config.get_web3_provider()
     if not w3.is_connected():
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 
@@ -98,7 +98,7 @@ def create_transaction(transaction: schemas.TransactionIn, private_key: str) -> 
 
 def get_transaction(tx_hash: str):
     """Get transaction and receipt by hash from Sepolia testnet."""
-    w3 = config.get_web3_sepolia_provider()
+    w3 = config.get_web3_provider()
     if not w3.is_connected():
         raise ConnectionError("Failed to connect to the Ethereum provider.")
 
